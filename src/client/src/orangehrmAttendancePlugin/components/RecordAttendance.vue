@@ -1,21 +1,21 @@
 <!--
-/**
- * OrangeHRM is a comprehensive Human Resource Management (HRM) System that captures
- * all the essential functionalities required for any enterprise.
- * Copyright (C) 2006 OrangeHRM Inc., http://www.orangehrm.com
- *
- * OrangeHRM is free software: you can redistribute it and/or modify it under the terms of
- * the GNU General Public License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * OrangeHRM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with OrangeHRM.
- * If not, see <https://www.gnu.org/licenses/>.
- */
- -->
+  /**
+  * OrangeHRM is a comprehensive Human Resource Management (HRM) System that captures
+  * all the essential functionalities required for any enterprise.
+  * Copyright (C) 2006 OrangeHRM Inc., http://www.orangehrm.com
+  *
+  * OrangeHRM is free software: you can redistribute it and/or modify it under the terms of
+  * the GNU General Public License as published by the Free Software Foundation, either
+  * version 3 of the License, or (at your option) any later version.
+  *
+  * OrangeHRM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  * See the GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License along with OrangeHRM.
+  * If not, see <https://www.gnu.org/licenses/>.
+  */
+  -->
 
 <template>
   <oxd-form :loading="isLoading" @submit-valid="onSave">
@@ -42,7 +42,7 @@
           </oxd-grid-item>
 
           <oxd-grid-item v-if="attendanceRecord.previousRecord.note">
-            <oxd-input-group :label="$t('attendance.punched_in_note')">
+            <oxd-input-group :label="$t('Punched in Location')">
               <oxd-text type="subtitle-2">
                 {{ attendanceRecord.previousRecord.note }}
               </oxd-text>
@@ -50,7 +50,6 @@
           </oxd-grid-item>
         </template>
 
-        <!-- Date Selector -->
         <oxd-grid-item class="--offset-row-2">
           <date-input
             :key="attendanceRecord.time"
@@ -62,7 +61,6 @@
           />
         </oxd-grid-item>
 
-        <!-- Time  Selector -->
         <oxd-grid-item class="--offset-row-2">
           <oxd-input-field
             v-model="attendanceRecord.time"
@@ -77,25 +75,38 @@
       </oxd-grid>
     </oxd-form-row>
 
-    <!-- select timezone -->
-
     <oxd-grid v-if="isTimezoneEditable" :cols="2">
       <oxd-grid-item>
         <timezone-dropdown v-model="attendanceRecord.timezone" required />
       </oxd-grid-item>
     </oxd-grid>
 
-    <!-- Note input -->
     <oxd-form-row>
       <oxd-grid :cols="4" class="orangehrm-full-width-grid">
         <oxd-grid-item class="--span-column-2">
-          <oxd-input-field
-            v-model="attendanceRecord.note"
-            :rules="rules.note"
-            :label="$t('general.note')"
-            :placeholder="$t('general.type_here')"
-            type="textarea"
-          />
+          <oxd-input-group :label="$t('Location')">
+            <div
+              id="geolocation-map"
+              style="
+                height: 250px;
+                width: 100%;
+                border-radius: 8px;
+                margin-bottom: 8px;
+              "
+            ></div>
+
+            <oxd-text
+              tag="p"
+              v-if="locationAddress"
+              style="font-weight: 600; margin-bottom: 4px"
+            >
+              {{ locationAddress }}
+            </oxd-text>
+
+            <oxd-text tag="p" class="orangehrm-attendance-punchedIn-timezone">
+              {{ locationInfo }}
+            </oxd-text>
+          </oxd-input-group>
         </oxd-grid-item>
       </oxd-grid>
     </oxd-form-row>
@@ -112,6 +123,7 @@
 </template>
 
 <script>
+/* global L */
 import {
   required,
   validDateFormat,
@@ -196,9 +208,16 @@ export default {
           promiseDebounce(this.validateDate, 500),
         ],
         time: [required, promiseDebounce(this.validateDate, 500)],
-        note: [shouldNotExceedCharLength(250)],
+        // note: [shouldNotExceedCharLength(250)], // <-- --- ATURAN VALIDASI NOTE DIHAPUS ---
       },
       previousRecordTimezone: null,
+      // --- Data untuk Geolocation ---
+      latitude: null,
+      longitude: null,
+      locationInfo: this.$t('attendance.getting_location'),
+      isLocationReady: false,
+      map: null,
+      locationAddress: '',
     };
   },
   computed: {
@@ -265,23 +284,132 @@ export default {
         this.isLoading = false;
       });
   },
+  mounted() {
+    this.initGeolocation();
+  },
   methods: {
+    initGeolocation() {
+      const mapContainer = document.getElementById('geolocation-map');
+      if (!mapContainer) {
+        setTimeout(this.initGeolocation, 100);
+        return;
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          this.showPosition,
+          this.showError,
+          {enableHighAccuracy: true, timeout: 10000, maximumAge: 0},
+        );
+      } else {
+        this.locationInfo = this.$t('attendance.geolocation_not_supported');
+        mapContainer.style.display = 'none';
+      }
+    },
+
+    // --- FUNGSI INI DIMODIFIKASI SECARA TOTAL ---
+    showPosition(position) {
+      this.latitude = position.coords.latitude;
+      this.longitude = position.coords.longitude;
+      this.isLocationReady = true;
+
+      this.map = L.map('geolocation-map').setView(
+        [this.latitude, this.longitude],
+        17,
+      );
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(this.map);
+
+      const marker = L.marker([this.latitude, this.longitude]).addTo(this.map);
+      const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${this.latitude}&lon=${this.longitude}`;
+
+      fetch(apiUrl)
+        .then((response) => response.json())
+        .then((data) => {
+          let locationString = '';
+          if (data.display_name) {
+            this.locationAddress = data.display_name;
+            this.locationInfo = `Coordinate: ${this.latitude.toFixed(
+              5,
+            )}, ${this.longitude.toFixed(5)}`;
+
+            // Gabungkan alamat dan koordinat menjadi satu string.
+            locationString = `${
+              data.display_name
+            } (Lat: ${this.latitude.toFixed(5)}, Lon: ${this.longitude.toFixed(
+              5,
+            )})`;
+            marker
+              .bindPopup(`<b>You Are Here</b><br>${this.locationAddress}`)
+              .openPopup();
+          } else {
+            // Jika API alamat gagal, gunakan koordinat saja.
+            this.locationInfo = `Location found: ${this.latitude.toFixed(
+              5,
+            )}, ${this.longitude.toFixed(5)}`;
+            locationString = `Location at Lat: ${this.latitude.toFixed(
+              5,
+            )}, Lon: ${this.longitude.toFixed(5)}`;
+            marker.bindPopup(`<b>You Are Here</b>`).openPopup();
+          }
+
+          // Masukkan string lokasi yang sudah jadi ke dalam properti 'note'.
+          this.attendanceRecord.note = locationString;
+        })
+        .catch((error) => {
+          console.error('Error fetching address:', error);
+          const locationString = `Failed to get location name. Coords: ${this.latitude.toFixed(
+            5,
+          )}, ${this.longitude.toFixed(5)}`;
+          this.locationInfo = locationString;
+          // Jika error, catat error tersebut sebagai note.
+          this.attendanceRecord.note = locationString;
+          marker.bindPopup(`<b>You Are Here</b>`).openPopup();
+        });
+    },
+
+    showError(error) {
+      const mapContainer = document.getElementById('geolocation-map');
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          this.locationInfo = this.$t(
+            'attendance.geolocation_permission_denied',
+          );
+          break;
+        case error.POSITION_UNAVAILABLE:
+          this.locationInfo = this.$t('attendance.geolocation_unavailable');
+          break;
+        case error.TIMEOUT:
+          this.locationInfo = this.$t('attendance.geolocation_timeout');
+          break;
+        default:
+          this.locationInfo = this.$t('attendance.geolocation_unknown_error');
+          break;
+      }
+      if (mapContainer) mapContainer.style.display = 'none';
+    },
+
+    // --- FUNGSI INI DIMODIFIKASI ---
     onSave() {
       this.isLoading = true;
-
       const timezone = guessTimezone();
+
+      // Objek ini sekarang jauh lebih sederhana dan hanya mengirim 'note' yang sudah berisi data lokasi.
+      const dataToSave = {
+        date: this.attendanceRecord.date,
+        time: this.attendanceRecord.time,
+        timezoneOffset:
+          this.attendanceRecord.timezone?._offset ?? timezone.offset,
+        timezoneName: this.attendanceRecord.timezone?.id ?? timezone.name,
+        note: this.attendanceRecord.note,
+      };
 
       this.http
         .request({
           method: this.attendanceRecordId ? 'PUT' : 'POST',
-          data: {
-            date: this.attendanceRecord.date,
-            time: this.attendanceRecord.time,
-            note: this.attendanceRecord.note,
-            timezoneOffset:
-              this.attendanceRecord.timezone?._offset ?? timezone.offset,
-            timezoneName: this.attendanceRecord.timezone?.id ?? timezone.name,
-          },
+          data: dataToSave,
         })
         .then(() => {
           return this.$toast.saveSuccess();
@@ -335,7 +463,6 @@ export default {
                 this.attendanceRecord.timezone?._offset ?? tzOffset,
               empNumber: this.employeeId,
             },
-            // Prevent triggering response interceptor on 400
             validateStatus: (status) => {
               return (status >= 200 && status < 300) || status == 400;
             },

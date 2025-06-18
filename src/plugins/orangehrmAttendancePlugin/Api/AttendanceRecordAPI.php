@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OrangeHRM is a comprehensive Human Resource Management (HRM) System that captures
  * all the essential functionalities required for any enterprise.
@@ -60,6 +61,9 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
     public const PARAMETER_PUNCH_OUT_NOTE = 'punchOutNote';
     public const PARAMETER_PUNCH_OUT_OFFSET = 'punchOutOffset';
     public const PARAMETER_PUNCH_OUT_TIMEZONE_NAME = 'punchOutTimezoneName';
+    public const PARAMETER_LATITUDE = 'latitude';
+    public const PARAMETER_LONGITUDE = 'longitude';
+    public const PARAMETER_ADDRESS = 'address';
 
     /**
      * @OA\Get(
@@ -249,7 +253,10 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
                 $punchOutTime,
                 $punchOutOffset,
                 $punchOutTimezoneName,
-                $punchOutNote
+                $punchOutNote,
+                $latitude,
+                $longitude,
+                $address
             ) = $this->getRequestBodyParams();
 
             $recordId = $attendanceRecord->getId();
@@ -345,6 +352,12 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
                     $attendanceRecord->setPunchOutTimeOffset($punchOutOffset);
                     $attendanceRecord->setPunchOutTimezoneName($punchOutTimezoneName);
                 }
+                if (!is_null($latitude) && !is_null($longitude)) {
+                    // Menggunakan fungsi setter yang sudah kita buat di file Entity (AttendanceRecord.php)
+                    $attendanceRecord->setPunchOutLatitude($latitude);
+                    $attendanceRecord->setPunchOutLongitude($longitude);
+                    $attendanceRecord->setPunchOutAddress($address);
+                }
             }
             return $attendanceRecord;
         } catch (AttendanceServiceException $e) {
@@ -397,6 +410,18 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
             $this->getRequestParams()->getStringOrNull(
                 RequestParams::PARAM_TYPE_BODY,
                 self::PARAMETER_PUNCH_OUT_NOTE
+            ),
+            $this->getRequestParams()->getFloatOrNull(
+                RequestParams::PARAM_TYPE_BODY,
+                self::PARAMETER_LATITUDE
+            ),
+            $this->getRequestParams()->getFloatOrNull(
+                RequestParams::PARAM_TYPE_BODY,
+                self::PARAMETER_LONGITUDE
+            ),
+            $this->getRequestParams()->getStringOrNull(
+                RequestParams::PARAM_TYPE_BODY,
+                self::PARAMETER_ADDRESS
             )
         ];
     }
@@ -429,7 +454,8 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
         if (is_null($timezoneOffset) && is_null($timezoneName)) {
             return false;
         } elseif ((is_null($timezoneOffset) && !is_null($timezoneName)) ||
-            (!is_null($timezoneOffset) && is_null($timezoneName))) {
+            (!is_null($timezoneOffset) && is_null($timezoneName))
+        ) {
             throw AttendanceServiceException::invalidTimezoneDetails();
         } //auth user tyring to update employee timezone with valid timezoneOffset and timezoneName
         else {
@@ -444,63 +470,44 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
     {
         return new ParamRuleCollection(
             new ParamRule(
-                CommonParams::PARAMETER_ID,
-                new Rule(Rules::POSITIVE)
-            ),
-            new ParamRule(
-                self::PARAMETER_PUNCH_IN_DATE,
+                self::PARAMETER_DATE,
                 new Rule(Rules::API_DATE)
             ),
             new ParamRule(
-                self::PARAMETER_PUNCH_IN_TIME,
+                self::PARAMETER_TIME,
                 new Rule(Rules::TIME, ['H:i'])
             ),
-            $this->getValidationDecorator()->notRequiredParamRule(
-                new ParamRule(
-                    self::PARAMETER_PUNCH_IN_OFFSET,
-                    new Rule(Rules::TIMEZONE_OFFSET)
-                )
+            new ParamRule(
+                self::PARAMETER_TIMEZONE_OFFSET,
+                new Rule(Rules::TIMEZONE_OFFSET)
+            ),
+            new ParamRule(
+                self::PARAMETER_TIMEZONE_NAME,
+                new Rule(Rules::TIMEZONE_NAME)
             ),
             $this->getValidationDecorator()->notRequiredParamRule(
                 new ParamRule(
-                    self::PARAMETER_PUNCH_IN_TIMEZONE_NAME,
-                    new Rule(Rules::TIMEZONE_NAME)
-                )
-            ),
-            $this->getValidationDecorator()->notRequiredParamRule(
-                new ParamRule(
-                    self::PARAMETER_PUNCH_IN_NOTE,
+                    self::PARAMETER_NOTE,
                     new Rule(Rules::STRING_TYPE)
                 ),
                 true
             ),
+            // --- Validasi untuk Geolocation ---
             $this->getValidationDecorator()->notRequiredParamRule(
                 new ParamRule(
-                    self::PARAMETER_PUNCH_OUT_DATE,
-                    new Rule(Rules::API_DATE)
-                ),
-            ),
-            $this->getValidationDecorator()->notRequiredParamRule(
-                new ParamRule(
-                    self::PARAMETER_PUNCH_OUT_TIME,
-                    new Rule(Rules::TIME, ['H:i'])
-                ),
-            ),
-            $this->getValidationDecorator()->notRequiredParamRule(
-                new ParamRule(
-                    self::PARAMETER_PUNCH_OUT_OFFSET,
-                    new Rule(Rules::TIMEZONE_OFFSET)
+                    self::PARAMETER_LATITUDE,
+                    new Rule(Rules::DECIMAL)
                 )
             ),
             $this->getValidationDecorator()->notRequiredParamRule(
                 new ParamRule(
-                    self::PARAMETER_PUNCH_OUT_TIMEZONE_NAME,
-                    new Rule(Rules::TIMEZONE_NAME)
+                    self::PARAMETER_LONGITUDE,
+                    new Rule(Rules::DECIMAL)
                 )
             ),
             $this->getValidationDecorator()->notRequiredParamRule(
                 new ParamRule(
-                    self::PARAMETER_PUNCH_OUT_NOTE,
+                    self::PARAMETER_ADDRESS,
                     new Rule(Rules::STRING_TYPE)
                 ),
                 true

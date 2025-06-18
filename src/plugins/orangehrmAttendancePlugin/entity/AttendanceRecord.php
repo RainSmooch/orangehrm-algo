@@ -342,4 +342,111 @@ class AttendanceRecord
     {
         $this->punchOutTimezoneName = $punchOutTimezoneName;
     }
+
+    /**
+     * @var float|null
+     *
+     * @ORM\Column(name="punch_in_latitude", type="decimal", precision=10, scale=8, nullable=true)
+     */
+    protected $punchInLatitude;
+
+    /**
+     * @var float|null
+     *
+     * @ORM\Column(name="punch_in_longitude", type="decimal", precision=11, scale=8, nullable=true)
+     */
+    protected $punchInLongitude;
+
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(name="punch_in_address", type="text", nullable=true)
+     */
+    protected $punchInAddress;
+
+    /**
+     * @var float|null
+     *
+     * @ORM\Column(name="punch_out_latitude", type="decimal", precision=10, scale=8, nullable=true)
+     */
+    protected $punchOutLatitude;
+
+    /**
+     * @var float|null
+     *
+     * @ORM\Column(name="punch_out_longitude", type="decimal", precision=11, scale=8, nullable=true)
+     */
+    protected $punchOutLongitude;
+
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(name="punch_out_address", type="text", nullable=true)
+     */
+    protected $punchOutAddress;
+
+    public function getPunchInLatitude(): ?float
+    {
+        return $this->punchInLatitude;
+    }
+
+    public function setPunchInLatitude(?float $punchInLatitude): self
+    {
+        $this->punchInLatitude = $punchInLatitude;
+        return $this;
+    }
+    public function getPunchInLongitude(): ?float
+    {
+        return $this->punchInLongitude;
+    }
+
+    public function setPunchInLongitude(?float $punchInLongitude): self
+    {
+        $this->punchInLongitude = $punchInLongitude;
+        return $this;
+    }
+
+    public function getPunchInAddress(): ?float
+    {
+        return $this->punchInAddress;
+    }
+
+    public function setPunchInAddress(?float $punchInAddress): self
+    {
+        $this->punchInAddress = $punchInAddress;
+        return $this;
+    }
+
+    public function getPunchOutLatitude(): ?float
+    {
+        return $this->punchOutLatitude;
+    }
+
+    public function setPunchOutLatitude(?float $punchOutLatitude): self
+    {
+        $this->punchOutLatitude = $punchOutLatitude;
+        return $this;
+    }
+
+    public function getPunchOutLongitude(): ?float
+    {
+        return $this->punchOutLongitude;
+    }
+
+    public function setPunchOutLongitude(?float $punchOutLongitude): self
+    {
+        $this->punchOutLongitude = $punchOutLongitude;
+        return $this;
+    }
+
+    public function getPunchOutAddress(): ?float
+    {
+        return $this->punchOutAddress;
+    }
+
+    public function setPunchOutAddress(?float $punchOutAddress): self
+    {
+        $this->punchOutAddress = $punchOutAddress;
+        return $this;
+    }
 }

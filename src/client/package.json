@@ -7,7 +7,7 @@
     "dev": "vue-cli-service build --watch --mode development --dest ../../web/dist",
     "build": "vue-cli-service build --dest ../../web/dist",
     "test:unit": "vue-cli-service test:unit",
-    "lint": "vue-cli-service lint --max-warnings=0 --mode production"
+    "lint": "vue-cli-service lint --fix --max-warnings=0 --mode production"
   },
   "dependencies": {
     "@ohrm/oxd": "2.0.3",
@@ -20,6 +20,8 @@
     "vue": "^3.4.18"
   },
   "devDependencies": {
+    "@babel/core": "^7.27.4",
+    "@types/babel__core": "^7",
     "@types/hammerjs": "^2.0.45",
     "@types/jest": "^27.5.2",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
@@ -42,7 +44,8 @@
     "sass": "^1.70.0",
     "sass-loader": "^12.6.0",
     "ts-jest": "^27.1.5",
-    "typescript": "~4.5.5"
+    "typescript": "~4.5.5",
+    "webpack": "^5.99.9"
   },
   "packageManager": "yarn@4.1.0"
 }

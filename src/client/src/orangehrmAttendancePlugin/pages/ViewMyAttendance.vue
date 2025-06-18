@@ -229,7 +229,7 @@ export default {
           name: 'punchInNote',
           slot: 'title',
           cellType: 'oxd-table-cell-truncate',
-          title: this.$t('attendance.punch_in_note'),
+          title: this.$t('Punch In Location'),
           style: {flex: 1},
         },
         {
@@ -243,7 +243,7 @@ export default {
           name: 'punchOutNote',
           slot: 'title',
           cellType: 'oxd-table-cell-truncate',
-          title: this.$t('attendance.punch_out_note'),
+          title: this.$t('Punch Out Location'),
           style: {flex: 1},
         },
         {
